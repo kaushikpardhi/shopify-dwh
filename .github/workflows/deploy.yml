@@ -1,0 +1,21 @@
+name: DWH CI
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify project structure
+        run: |
+          echo "Shopify DWH repository checked out successfully"
+          ls -la
+          echo "CI pipeline is working"
+          
