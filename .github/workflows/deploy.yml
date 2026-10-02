@@ -30,4 +30,4 @@ jobs:
         run: |
           snow sql \
             --temporary-connection \
-            -f 03_dimensions/dim_product/create.sql
+            -f 03_dimensions/dim_product/load.sql
