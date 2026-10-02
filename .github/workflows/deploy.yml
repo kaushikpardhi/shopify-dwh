@@ -17,7 +17,7 @@ jobs:
         run: |
           pip install snowflake-cli
 
-      - name: Test Snowflake connection
+      - name: Deploy DIM_PRODUCT
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
@@ -27,7 +27,7 @@ jobs:
           SNOWFLAKE_ROLE: ACCOUNTADMIN
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
           SNOWFLAKE_AUTHENTICATOR: snowflake
-          run: |
-  snow sql \
-    --temporary-connection \
-    -f 03_dimensions/dim_product/create.sql
+        run: |
+          snow sql \
+            --temporary-connection \
+            -f 03_dimensions/dim_product/create.sql
