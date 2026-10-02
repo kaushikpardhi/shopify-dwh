@@ -27,5 +27,7 @@ jobs:
           SNOWFLAKE_ROLE: ACCOUNTADMIN
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
           SNOWFLAKE_AUTHENTICATOR: snowflake
-        run: |
-          snow connection test --temporary-connection
+          run: |
+  snow sql \
+    --temporary-connection \
+    -f 03_dimensions/dim_product/create.sql
