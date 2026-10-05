@@ -19,7 +19,7 @@ jobs:
         run: |
           pip install snowflake-cli
 
-      - name: Deploy DIM_PRODUCT
+      - name: Deploy DWH SQL
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
@@ -30,6 +30,12 @@ jobs:
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
           SNOWFLAKE_AUTHENTICATOR: snowflake
         run: |
-          snow sql \
-            --temporary-connection \
-            -f 03_dimensions/dim_product/load.sql
+          for file in $(find 03_dimensions 04_facts -name "create.sql" | sort); do
+            echo "Running $file"
+            snow sql --temporary-connection -f "$file"
+          done
+
+          for file in $(find 03_dimensions 04_facts -name "load.sql" | sort); do
+            echo "Running $file"
+            snow sql --temporary-connection -f "$file"
+          done
