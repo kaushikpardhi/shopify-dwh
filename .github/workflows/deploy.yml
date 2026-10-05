@@ -34,13 +34,21 @@ jobs:
           echo "=== Creating DWH objects ==="
 
           for file in $(find . -type f -path "*/create.sql" | sort); do
-            echo "Running $file"
-            snow sql --temporary-connection -f "$file"
+            if grep -q '[^[:space:]]' "$file"; then
+              echo "Running $file"
+              snow sql --temporary-connection -f "$file"
+            else
+              echo "Skipping empty file: $file"
+            fi
           done
 
           echo "=== Loading DWH objects ==="
 
           for file in $(find . -type f -path "*/load.sql" | sort); do
-            echo "Running $file"
-            snow sql --temporary-connection -f "$file"
+            if grep -q '[^[:space:]]' "$file"; then
+              echo "Running $file"
+              snow sql --temporary-connection -f "$file"
+            else
+              echo "Skipping empty file: $file"
+            fi
           done
