@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "=== Creating DWH objects ==="
 
-          for file in $(find . -type f -path "*/create.sql" | sort); do
+          for file in $(find 02_staging 03_dimensions 04_facts -type f -name "create.sql" 2>/dev/null | sort); do
             if grep -q '[^[:space:]]' "$file"; then
               echo "Running $file"
               snow sql --temporary-connection -f "$file"
@@ -44,7 +44,7 @@ jobs:
 
           echo "=== Loading DWH objects ==="
 
-          for file in $(find . -type f -path "*/load.sql" | sort); do
+          for file in $(find 02_staging 03_dimensions 04_facts -type f -name "load.sql" 2>/dev/null | sort); do
             if grep -q '[^[:space:]]' "$file"; then
               echo "Running $file"
               snow sql --temporary-connection -f "$file"
