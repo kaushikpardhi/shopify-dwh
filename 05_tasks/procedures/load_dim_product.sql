@@ -1,6 +1,6 @@
-create or replace procedure load_dim_product()
+CREATE OR REPLACE PROCEDURE SQL_PRACTICE.LOAD_DIM_PRODUCT()
 returns varchar
-langauge sql
+LANGUAGE SQL
 execute as owner
 AS
 $$
