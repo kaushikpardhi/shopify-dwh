@@ -42,6 +42,19 @@ jobs:
             fi
           done
 
+          echo "=== Deploying stored procedures ==="
+
+          if [ -d "05_tasks/procedures" ]; then
+            for file in $(find 05_tasks/procedures -type f -name "*.sql" | sort); do
+              if grep -q '[^[:space:]]' "$file"; then
+                echo "Running $file"
+                snow sql --temporary-connection -f "$file"
+              else
+                echo "Skipping empty file: $file"
+              fi
+            done
+          fi
+
           echo "=== Loading DWH objects ==="
 
           for file in $(find 02_staging 03_dimensions 04_facts -type f -name "load.sql" 2>/dev/null | sort); do
