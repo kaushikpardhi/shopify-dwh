@@ -1,4 +1,3 @@
-```yaml
 name: DWH CI
 
 on:
@@ -66,4 +65,3 @@ jobs:
               echo "Skipping empty file: $file"
             fi
           done
-```
