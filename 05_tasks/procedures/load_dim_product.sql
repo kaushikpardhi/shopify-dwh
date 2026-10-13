@@ -1,12 +1,24 @@
+
 CREATE OR REPLACE PROCEDURE SQL_PRACTICE.LOAD_DIM_PRODUCT()
-returns varchar
+RETURNS VARCHAR
 LANGUAGE SQL
-execute as owner
+EXECUTE AS OWNER
 AS
 $$
-Begin
+DECLARE
+    V_RUN_ID VARCHAR DEFAULT UUID_STRING();
+    V_STEP_NAME VARCHAR DEFAULT 'DIM_PRODUCT';
+    V_START_TIME TIMESTAMP_TZ DEFAULT CURRENT_TIMESTAMP();
+    V_END_TIME TIMESTAMP_TZ;
+    V_ROWS_INSERTED NUMBER DEFAULT 0;
+    V_ROWS_UPDATED NUMBER DEFAULT 0;
+    V_ERROR_CODE VARCHAR;
+    V_ERROR_MESSAGE VARCHAR;
+    V_QUERY_ID VARCHAR;
+    V_STATUS VARCHAR DEFAULT 'SUCCESS';
+BEGIN
 
- -- Expire existing current versions when attributes change
+    -- Expire changed current versions
     UPDATE SQL_PRACTICE.DIM_PRODUCT D
     SET
         IS_CURRENT = FALSE,
@@ -22,10 +34,13 @@ Begin
         OR NVL(D.STATUS, '') <> NVL(S.STATUS, '')
         OR NVL(D.TAGS, '') <> NVL(S.TAGS, '')
         OR NVL(D.IS_GIFT_CARD, FALSE) <> NVL(S.IS_GIFT_CARD, FALSE)
-        OR NVL(D.TRACKS_INVENTORY, FALSE) <> NVL(S.TRACKS_INVENTORY, FALSE)
+        OR NVL(D.TRACKS_INVENTORY, FALSE)
+           <> NVL(S.TRACKS_INVENTORY, FALSE)
       );
 
-    -- Insert new products and new versions of changed products
+    V_ROWS_UPDATED := SQLROWCOUNT;
+
+    -- Insert new products and changed versions
     INSERT INTO SQL_PRACTICE.DIM_PRODUCT
     (
         PRODUCT_ID,
@@ -67,7 +82,90 @@ Begin
           AND D.IS_CURRENT = TRUE
     );
 
-    RETURN 'DIM_PRODUCT load completed successfully';
+    V_ROWS_INSERTED := SQLROWCOUNT;
+    V_END_TIME := CURRENT_TIMESTAMP();
 
-end;
+    -- Record successful execution
+    INSERT INTO SQL_PRACTICE.ETL_AUDIT_LOG
+    (
+        RUN_ID,
+        PIPELINE_NAME,
+        STEP_NAME,
+        STATUS,
+        ROWS_INSERTED,
+        ROWS_UPDATED,
+        START_TIME,
+        END_TIME
+    )
+    VALUES
+    (
+        :V_RUN_ID,
+        'SHOPIFY_DWH',
+        :V_STEP_NAME,
+        'SUCCESS',
+        :V_ROWS_INSERTED,
+        :V_ROWS_UPDATED,
+        :V_START_TIME,
+        :V_END_TIME
+    );
+
+    RETURN 'DIM_PRODUCT load completed successfully. RUN_ID='
+           || V_RUN_ID;
+
+EXCEPTION
+    WHEN OTHER THEN
+        V_END_TIME := CURRENT_TIMESTAMP();
+        V_ERROR_CODE := SQLCODE;
+        V_ERROR_MESSAGE := SQLERRM;
+        V_QUERY_ID := SQLID;
+
+        -- Record failure in the audit table
+        INSERT INTO SQL_PRACTICE.ETL_AUDIT_LOG
+        (
+            RUN_ID,
+            PIPELINE_NAME,
+            STEP_NAME,
+            STATUS,
+            ROWS_INSERTED,
+            ROWS_UPDATED,
+            START_TIME,
+            END_TIME,
+            ERROR_MESSAGE
+        )
+        VALUES
+        (
+            :V_RUN_ID,
+            'SHOPIFY_DWH',
+            :V_STEP_NAME,
+            'FAILED',
+            :V_ROWS_INSERTED,
+            :V_ROWS_UPDATED,
+            :V_START_TIME,
+            :V_END_TIME,
+            :V_ERROR_MESSAGE
+        );
+
+        -- Store detailed error information
+        INSERT INTO SQL_PRACTICE.ETL_ERROR_LOG
+        (
+            RUN_ID,
+            PIPELINE_NAME,
+            STEP_NAME,
+            ERROR_CODE,
+            ERROR_MESSAGE,
+            QUERY_ID
+        )
+        VALUES
+        (
+            :V_RUN_ID,
+            'SHOPIFY_DWH',
+            :V_STEP_NAME,
+            :V_ERROR_CODE,
+            :V_ERROR_MESSAGE,
+            :V_QUERY_ID
+        );
+
+        -- Propagate the failure to the caller
+        RAISE;
+END;
 $$;
