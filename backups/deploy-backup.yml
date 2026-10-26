@@ -1,0 +1,67 @@
+name: DWH CI
+
+on:
+  push:
+    branches:
+      - master
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Snowflake CLI
+        run: |
+          pip install snowflake-cli
+
+      - name: Deploy DWH SQL
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+          SNOWFLAKE_ROLE: ACCOUNTADMIN
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_AUTHENTICATOR: snowflake
+
+        run: |
+          echo "=== Creating DWH objects ==="
+
+          for file in $(find 02_staging 03_dimensions 04_facts -type f -name "create.sql" 2>/dev/null | sort); do
+            if grep -q '[^[:space:]]' "$file"; then
+              echo "Running $file"
+              snow sql --temporary-connection -f "$file"
+            else
+              echo "Skipping empty file: $file"
+            fi
+          done
+
+          echo "=== Deploying stored procedures ==="
+
+          if [ -d "05_tasks/procedures" ]; then
+            for file in $(find 05_tasks/procedures -type f -name "*.sql" | sort); do
+              if grep -q '[^[:space:]]' "$file"; then
+                echo "Running $file"
+                snow sql --temporary-connection --single-transaction -f "$file"
+              else
+                echo "Skipping empty file: $file"
+              fi
+            done
+          fi
+
+          echo "=== Loading DWH objects ==="
+
+          for file in $(find 02_staging 03_dimensions 04_facts -type f -name "load.sql" 2>/dev/null | sort); do
+            if grep -q '[^[:space:]]' "$file"; then
+              echo "Running $file"
+              snow sql --temporary-connection -f "$file"
+            else
+              echo "Skipping empty file: $file"
+            fi
+          done
