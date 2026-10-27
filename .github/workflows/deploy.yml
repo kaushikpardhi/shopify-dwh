@@ -42,3 +42,4 @@ jobs:
                 --schemachange-vars '{"DB_NAME":"DWH_MIGRATION_TEST_DB"}' \
                 --schemachange-change-history-table DWH_MIGRATION_TEST_DB.SQL_PRACTICE.SCHEMACHANGE_CHANGE_HISTORY \
                 --schemachange-create-change-history-table \
+                --schemachange-dry-run
