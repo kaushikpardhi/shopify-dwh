@@ -34,11 +34,12 @@ jobs:
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
           SNOWFLAKE_ROLE: ACCOUNTADMIN
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_DATABASE: DWH_MIGRATION_TEST_DB
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
         run: |
-          schemachange deploy \
-          --schemachange-root-folder migrations \
-          --schemachange-change-history-table PRACTICE_DB.SQL_PRACTICE.SCHEMACHANGE_CHANGE_HISTORY \
-          --schemachange-create-change-history-table \
-          --schemachange-dry-run
+            schemachange deploy \
+                --schemachange-root-folder migrations \
+                --schemachange-vars '{"DB_NAME":"DWH_MIGRATION_TEST_DB"}' \
+                --schemachange-change-history-table DWH_MIGRATION_TEST_DB.SQL_PRACTICE.SCHEMACHANGE_CHANGE_HISTORY \
+                --schemachange-create-change-history-table \
+                 --schemachange-dry-run
