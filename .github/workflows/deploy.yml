@@ -25,20 +25,21 @@ jobs:
           python-version: '3.12'
 
       - name: Install schemachange
-        run: pip install schemachange
+        run: pip install schemachange==4.4.0
 
       - name: Deploy Snowflake migrations
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
           SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
-          SNOWFLAKE_ROLE: ACCOUNTADMIN
+          SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
           SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
-          SNOWFLAKE_DATABASE: DWH_MIGRATION_TEST_DB
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+
         run: |
-            schemachange deploy \
-                --schemachange-root-folder migrations \
-                --schemachange-vars '{"DB_NAME":"DWH_MIGRATION_TEST_DB"}' \
-                --schemachange-change-history-table DWH_MIGRATION_TEST_DB.SQL_PRACTICE.SCHEMACHANGE_CHANGE_HISTORY \
-                --schemachange-create-change-history-table
+          schemachange deploy \
+            --schemachange-root-folder migrations \
+            --schemachange-vars "{\"DB_NAME\":\"${SNOWFLAKE_DATABASE}\"}" \
+            --schemachange-change-history-table "${SNOWFLAKE_DATABASE}.${SNOWFLAKE_SCHEMA}.SCHEMACHANGE_CHANGE_HISTORY" \
+            --schemachange-create-change-history-table
